@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 using Random = UnityEngine.Random;
-
+using UnityEngine.SceneManagement;
 public class LevelSpawner : MonoBehaviour
 {
     [Serializable]
@@ -14,6 +14,7 @@ public class LevelSpawner : MonoBehaviour
     }
     public List<obstacleTypes> obstacleList;
 
+    public Gradient _gradientColor;
     //[HideInInspector] 
     public GameObject[] obstacleGameobjects;
     public GameObject winPrefab;
@@ -27,14 +28,22 @@ public class LevelSpawner : MonoBehaviour
     [SerializeField] private float ObstacleSpace;
 
     [SerializeField] private float RotationSpeed;
-    private bool IsRotating;
 
     private void Start()
     {
-        Application.targetFrameRate = 60;
-        randomObstacleType();
+        if (PlayerPrefs.HasKey("Level"))
+            level = PlayerPrefs.GetInt("Level");
+        else
+        {
+            PlayerPrefs.SetInt("Level", 1);
+            level = PlayerPrefs.GetInt("Level");
+        }
 
-        obstacleNumber = 20 + level * 3;//default
+        Application.targetFrameRate = 60;
+
+
+        obstacleNumber = 20 + level * 3;
+        randomObstacleType();
 
         ObstacleHeight = GetComponent<Transform>().position.y - ObstacleSpace;
 
@@ -42,33 +51,29 @@ public class LevelSpawner : MonoBehaviour
         {
             temp1Obstacle = Instantiate(obstacleGameobjects[i]);
             temp1Obstacle.transform.position = new Vector3(0, ObstacleHeight, 0);
-            temp1Obstacle.transform.eulerAngles = new Vector3(0, i * 8, 0); //This will give nice curve to obstacles
+            temp1Obstacle.transform.eulerAngles = new Vector3(0, i * 6, 0); //This will give nice curve to obstacles
             temp1Obstacle.transform.SetParent(this.transform);
-
             ObstacleHeight -= ObstacleSpace;
         }
 
         temp2Obstacle = Instantiate(winPrefab, new Vector3(0, ObstacleHeight, 0), Quaternion.identity);
         temp1Obstacle.transform.SetParent(this.transform);
         temp2Obstacle.name = "WinPlane";
-        IsRotating = true;
+
     }
 
     private void Update()
     {
-        if (IsRotating)
-        {
-            transform.Rotate(0, Time.deltaTime * RotationSpeed, 0, Space.Self);
-        }
+        transform.Rotate(0, Time.deltaTime * RotationSpeed, 0, Space.Self);
     }
     private void randomObstacleType()
     {
         int RandomedListItem = Random.Range(0, 5);
         obstacleGameobjects = new GameObject[obstacleNumber];
+        SetLevelDifficulty();
 
         for (int i = 0; i < obstacleNumber; i++)
         {
-            SetLevelDifficulty();
             int RandomModel = Random.Range(levelDiffuculty, obstacleList[RandomedListItem].obstacleModels.Length);//models will be more difficult to pass with level progress
 
             obstacleGameobjects[i] = obstacleList[RandomedListItem].obstacleModels[RandomModel];
@@ -76,15 +81,22 @@ public class LevelSpawner : MonoBehaviour
     }
     private void SetLevelDifficulty()
     {
-        if (level < 5)
+        if (level >= 0 && level < 5)
             levelDiffuculty = 0;
-        else if (level < 10)
+        else if (level >= 5 && level < 10)
             levelDiffuculty = 1;
-        else if (level < 15)
+        else if (level >= 10)
             levelDiffuculty = 2;
-        else if (level < 20)
-            levelDiffuculty = 3;
 
+    }
+    public void NextLevel()
+    {
+        PlayerPrefs.SetInt("Level", PlayerPrefs.GetInt("Level") + 1);
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+    }
+    public void RestartLevel()
+    {
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 
 }

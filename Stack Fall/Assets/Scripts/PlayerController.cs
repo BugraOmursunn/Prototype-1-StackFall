@@ -6,13 +6,25 @@ public class PlayerController : MonoBehaviour
 {
     public Rigidbody rb;
     private bool _pressing;
-
+    private bool IsAlive;
     [SerializeField] private int DownVelocityValue;
     [SerializeField] private int JumpVelocityValue;
 
     [SerializeField] private bool IsImmortal;
     [SerializeField] private float AccumulatedTime;
     public GameObject fireShieldFx;
+
+
+    public enum PlayerState
+    {
+        MainMenu,
+        Playing,
+        Died,
+        EndMenu
+    }
+    [HideInInspector]
+    public PlayerState _playerState = PlayerState.MainMenu;
+
     void Start()
     {
         rb = GetComponent<Rigidbody>();
@@ -21,26 +33,55 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetMouseButtonDown(0))
-            _pressing = true;
-        if (Input.GetMouseButtonUp(0))
-            _pressing = false;
-
-        if (_pressing)
-            AccumulatedTime += Time.deltaTime;
-        else if (AccumulatedTime > 0)
-            AccumulatedTime -= Time.deltaTime;
-
-
-        if (AccumulatedTime >= 0.5f)
+        switch (_playerState)
         {
-            fireShieldFx.SetActive(true);
-            IsImmortal = true;
-        }
-        else if (AccumulatedTime <= 0f)
-        {
-            fireShieldFx.SetActive(false);
-            IsImmortal = false;
+            case PlayerState.MainMenu:
+                if (Input.GetMouseButtonDown(0))
+                {
+                    _pressing = true;
+                    _playerState = PlayerState.Playing;
+                    FindObjectOfType<UIController>().SetUIState(1);
+                }
+                break;
+            case PlayerState.Playing:
+
+                if (Input.GetMouseButtonDown(0))
+                    _pressing = true;
+                if (Input.GetMouseButtonUp(0))
+                    _pressing = false;
+
+                if (_pressing)
+                    AccumulatedTime += Time.deltaTime;
+                else if (AccumulatedTime > 0)
+                    AccumulatedTime -= Time.deltaTime;
+
+
+                if (AccumulatedTime >= 0.5f)
+                {
+                    fireShieldFx.SetActive(true);
+                    IsImmortal = true;
+                }
+                else if (AccumulatedTime <= 0f)
+                {
+                    fireShieldFx.SetActive(false);
+                    IsImmortal = false;
+                }
+                break;
+
+            case PlayerState.Died:
+                if (Input.GetMouseButtonDown(0))
+                {
+                    FindObjectOfType<LevelSpawner>().RestartLevel();
+                    FindObjectOfType<UIController>().SetUIState(1);
+
+                }
+                break;
+            case PlayerState.EndMenu:
+                if (Input.GetMouseButtonDown(0))
+                {
+                    FindObjectOfType<LevelSpawner>().NextLevel();
+                }
+                break;
         }
     }
     private void FixedUpdate()
@@ -62,7 +103,6 @@ public class PlayerController : MonoBehaviour
             {
                 other.transform.parent.GetComponent<ObstacleController>().PlayShatterAnim();
             }
-
         }
         else
         {
@@ -72,8 +112,16 @@ public class PlayerController : MonoBehaviour
             }
             else if (other.gameObject.tag == "plane")
             {
-                Debug.Log("Game Over");
+                _pressing = false;
+                _playerState = PlayerState.Died;
+                FindObjectOfType<UIController>().SetUIState(2);
             }
+        }
+        if (other.gameObject.tag == "Finish")
+        {
+            _pressing = false;
+            _playerState = PlayerState.EndMenu;
+            FindObjectOfType<UIController>().SetUIState(3);
         }
 
     }
@@ -82,17 +130,6 @@ public class PlayerController : MonoBehaviour
         if (!_pressing)
         {
             Jump();
-        }
-        else
-        {
-            if (other.gameObject.tag == "Enemy")
-            {
-
-            }
-            else if (other.gameObject.tag == "Plane")
-            {
-
-            }
         }
     }
     private void Jump()
