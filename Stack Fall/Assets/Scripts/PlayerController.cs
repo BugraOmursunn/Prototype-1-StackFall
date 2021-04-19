@@ -12,8 +12,8 @@ public class PlayerController : MonoBehaviour
 
     [SerializeField] private bool IsImmortal;
     [SerializeField] private float AccumulatedTime;
-    public GameObject fireShieldFx;
-
+    public GameObject fireShieldFx, DeathFx, WinFx;
+    private int BreakedObstacles;
 
     public enum PlayerState
     {
@@ -24,6 +24,9 @@ public class PlayerController : MonoBehaviour
     }
     [HideInInspector]
     public PlayerState _playerState = PlayerState.MainMenu;
+
+    [SerializeField]
+    AudioClip win, death, idestroy, destroy, bounce;
 
     void Start()
     {
@@ -44,7 +47,6 @@ public class PlayerController : MonoBehaviour
                 }
                 break;
             case PlayerState.Playing:
-
                 if (Input.GetMouseButtonDown(0))
                     _pressing = true;
                 if (Input.GetMouseButtonUp(0))
@@ -73,7 +75,6 @@ public class PlayerController : MonoBehaviour
                 {
                     FindObjectOfType<LevelSpawner>().RestartLevel();
                     FindObjectOfType<UIController>().SetUIState(1);
-
                 }
                 break;
             case PlayerState.EndMenu:
@@ -101,27 +102,33 @@ public class PlayerController : MonoBehaviour
         {
             if (other.gameObject.tag != "Finish")//if game is finished
             {
-                other.transform.parent.GetComponent<ObstacleController>().PlayShatterAnim();
+                BreakObstacle(other, 0);
             }
         }
         else
         {
             if (other.gameObject.tag == "enemy")
             {
-                other.transform.parent.GetComponent<ObstacleController>().PlayShatterAnim();
+                BreakObstacle(other, 1);
             }
             else if (other.gameObject.tag == "plane")
             {
                 _pressing = false;
                 _playerState = PlayerState.Died;
                 FindObjectOfType<UIController>().SetUIState(2);
+                ScoreManager.instance.ResetScore();//reset score
+                SoundManager.instance.playSoundFx(death, 1);
+                DeathFx.SetActive(true);
             }
         }
-        if (other.gameObject.tag == "Finish")
+
+        if (other.gameObject.tag == "Finish" && _playerState == PlayerState.Playing)
         {
             _pressing = false;
             _playerState = PlayerState.EndMenu;
             FindObjectOfType<UIController>().SetUIState(3);
+            SoundManager.instance.playSoundFx(win, 1);
+            WinFx.SetActive(true);
         }
 
     }
@@ -130,7 +137,30 @@ public class PlayerController : MonoBehaviour
         if (!_pressing)
         {
             Jump();
+            SoundManager.instance.playSoundFx(bounce, 1);
         }
+    }
+    private void BreakObstacle(Collision other, int BreakType)
+    {
+        other.transform.parent.GetComponent<ObstacleController>().PlayShatterAnim();
+        BreakedObstacles++;
+
+        int TotalObstacleNumber = 20 + PlayerPrefs.GetInt("Level") * 3;
+
+        FindObjectOfType<UIController>().ProgressLevelBar(BreakedObstacles / (float)TotalObstacleNumber);
+
+        switch (BreakType)
+        {
+            case 0://break while immortal
+                ScoreManager.instance.AddScore(1);//1 point
+                SoundManager.instance.playSoundFx(idestroy, 1);
+                break;
+            case 1://break normal
+                ScoreManager.instance.AddScore(2);//2 point
+                SoundManager.instance.playSoundFx(destroy, 1);
+                break;
+        }
+
     }
     private void Jump()
     {

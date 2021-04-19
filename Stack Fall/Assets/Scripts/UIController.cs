@@ -8,28 +8,44 @@ public class UIController : MonoBehaviour
     public class Panels
     {
         public GameObject StartPanel;
+        public GameObject PlayingPanel;
         public GameObject DiedPanel;
         public GameObject EndPanel;
     }
     [SerializeField] private Panels _panels;
-    [SerializeField] private Text LevelText;
+    [SerializeField] private Text CurrentLevelText;
+    [SerializeField] private Text NextLevelText;
+    [SerializeField] private Image CurrentLevelFg, NextLevelFg, LevelProgressImage;
+
+
+    private Color _color;
+
     private
     void Start()
     {
-        LevelText.text = PlayerPrefs.GetInt("Level").ToString();
+        CurrentLevelText.text = PlayerPrefs.GetInt("Level").ToString();
+        NextLevelText.text = (PlayerPrefs.GetInt("Level") + 1).ToString();
         SetUIState(0);
+
+        _color = Random.ColorHSV(0, 1, 0.5f, 1, 1, 1);
+        LevelProgressImage.color = _color;
+        CurrentLevelFg.color = _color;
+        NextLevelFg.color = _color;
+
     }
 
     public void SetUIState(int value)
     {
-        _panels.StartPanel.SetActive(false); _panels.DiedPanel.SetActive(false); _panels.EndPanel.SetActive(false);
+        _panels.StartPanel.SetActive(false); _panels.PlayingPanel.SetActive(false); _panels.DiedPanel.SetActive(false); _panels.EndPanel.SetActive(false);
 
         switch (value)
         {
             case 0:
                 _panels.StartPanel.SetActive(true);
+                ScoreManager.instance.SetHighScore();
                 break;
             case 1:
+                _panels.PlayingPanel.SetActive(true);
                 break;
             case 2:
                 _panels.DiedPanel.SetActive(true);
@@ -38,5 +54,9 @@ public class UIController : MonoBehaviour
                 _panels.EndPanel.SetActive(true);
                 break;
         }
+    }
+    public void ProgressLevelBar(float value)
+    {
+        LevelProgressImage.fillAmount = value;
     }
 }

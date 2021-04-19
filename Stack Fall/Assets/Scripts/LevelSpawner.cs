@@ -29,6 +29,9 @@ public class LevelSpawner : MonoBehaviour
 
     [SerializeField] private float RotationSpeed;
 
+    private Color _color;
+    [SerializeField]
+    private Material PlayerMat, PlaneMat;
     private void Start()
     {
         if (PlayerPrefs.HasKey("Level"))
@@ -65,6 +68,13 @@ public class LevelSpawner : MonoBehaviour
     private void Update()
     {
         transform.Rotate(0, Time.deltaTime * RotationSpeed, 0, Space.Self);
+
+        if (Input.GetMouseButtonDown(0))
+        {
+            _color = Random.ColorHSV(0, 1, 0.5f, 1, 1, 1);
+            PlayerMat.color = _color;
+            PlaneMat.color = _color;
+        }
     }
     private void randomObstacleType()
     {
@@ -87,7 +97,6 @@ public class LevelSpawner : MonoBehaviour
             levelDiffuculty = 1;
         else if (level >= 10)
             levelDiffuculty = 2;
-
     }
     public void NextLevel()
     {
