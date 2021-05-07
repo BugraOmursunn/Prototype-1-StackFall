@@ -1,1 +1,5 @@
+<<<<<<< HEAD
 Conflig test 678678678678
+=======
+Conflig test 1231231
+>>>>>>> TestBranch
